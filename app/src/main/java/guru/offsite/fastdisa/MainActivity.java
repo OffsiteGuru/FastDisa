@@ -22,13 +22,11 @@ public class MainActivity extends AppCompatActivity {
         Context context = getApplicationContext();
         EditText string_url = (EditText) findViewById(R.id.txt_url);
         EditText string_password = (EditText) findViewById(R.id.txt_password);
-        EditText string_disanum = (EditText) findViewById(R.id.txt_disaNum);
         ToggleButton toggle_disa = (ToggleButton) findViewById(R.id.toggle_enableDISA);
 
         SharedPreferences sharedPref = context.getSharedPreferences("guru.offsite.fastdisa", Context.MODE_PRIVATE);
         string_url.setText(sharedPref.getString("PushURL", "https://"));
         string_password.setText(sharedPref.getString("PushPassword", ""));
-        string_disanum.setText(sharedPref.getString("DisaNum", ""));
         toggle_disa.setChecked(sharedPref.getBoolean("EnableDisa", false));
     }
 
@@ -37,7 +35,6 @@ public class MainActivity extends AppCompatActivity {
         //Intent intent_save = new Intent(this, DisplayMessageActivity.class);
         EditText string_url = (EditText) findViewById(R.id.txt_url);
         EditText string_password = (EditText) findViewById(R.id.txt_password);
-        EditText string_disanum = (EditText) findViewById(R.id.txt_disaNum);
         ToggleButton toggle_disa = (ToggleButton) findViewById(R.id.toggle_enableDISA);
 
 
@@ -47,7 +44,6 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString("PushURL", string_url.getText().toString());
         editor.putString("PushPassword", string_password.getText().toString());
-        editor.putString("DisaNum", string_disanum.getText().toString());
         editor.putBoolean("EnableDisa", toggle_disa.isChecked());
 
         boolean save_return = editor.commit();
