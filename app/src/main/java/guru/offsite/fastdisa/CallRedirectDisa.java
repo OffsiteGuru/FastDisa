@@ -5,10 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.StrictMode;
+import android.telecom.TelecomManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.Toast;
 import org.json.JSONObject;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CallRedirectDisa extends BroadcastReceiver {
     String jsonString;
@@ -17,27 +21,54 @@ public class CallRedirectDisa extends BroadcastReceiver {
     String status;
     String verbose;
     int exitCode = 1;
+    String fallbackDisa;
 
     @Override
     public void onReceive(Context context, Intent intent) {
+
+        // We're going to need this thoughout
+        TelephonyManager mTelephonyMgr = (TelephonyManager)context.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+        TelecomManager mTelecomMgr = (TelecomManager)context.getSystemService(Context.TELECOM_SERVICE);
+
+        // Pull the originally dialed phone number into a string variable
+        String originalRawNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
+
+        // Check if we're dialing an emergency number. GTFO of the way if we are.
+        if (originalRawNumber.equals("911")) {
+            Log.d("FastDisa", "EMERGENCY NUMBER DIALED");
+            return;
+        }
+
+        // Clean the number up
+        String workWithNumber = originalRawNumber;
+
+        if (originalRawNumber.contains(",") || originalRawNumber.contains(";")) {
+            Pattern pattern = Pattern.compile("[,;]");
+            Matcher matcher = pattern.matcher(originalRawNumber);
+            if (matcher.find()) {
+                Log.d("FastDisa", "found at " + matcher.start());
+                workWithNumber = workWithNumber.substring(0, matcher.start());
+            }
+        }
+        final String originalNumber = workWithNumber.substring(workWithNumber.length() - 10);
+
+        Log.d("FastDisa", "Original Number: " + originalNumber + " From dialed number: " + originalRawNumber);
 
         // Pull FastDisa preferences into variables.
         SharedPreferences sharedPref = context.getSharedPreferences("guru.offsite.fastdisa", Context.MODE_PRIVATE);
         String PushURL = sharedPref.getString("PushURL", "https://");
         String PushPassword = sharedPref.getString("PushPassword", "");
         Boolean EnableDisa = sharedPref.getBoolean("EnableDisa", false);
+        this.fallbackDisa = sharedPref.getString("FallbackDisa", null);
 
-        // Check if we're configured and enabled.
-        if (PushURL.equals("https://") || !EnableDisa.booleanValue()) {
-            return; // TODO: This should be handled somehow. Should we stop the call?
+        // Check if we're enabled.
+        if (!EnableDisa.booleanValue()) {
+            Log.d("FastDisa", "FastDisa Disabled");
+            return;
         }
 
-        // Pull the originally dialed phone number into a string variable
-        final String originalNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
-
         // Get the Caller ID and pull it into a variable
-        TelephonyManager mTelephonyMgr = (TelephonyManager)context.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
-        String mPhoneNumber = mTelephonyMgr.getLine1Number(); // TODO: We need the propper permissions for this to work. Check/Handle it.
+        String mPhoneNumber = mTelephonyMgr.getLine1Number(); // TODO: We need the proper permissions for this to work. Check/Handle it.
         mPhoneNumber = mPhoneNumber.substring(mPhoneNumber.length() - 10);
         Log.d("fastdisa", "mynumber " + mPhoneNumber);
 
@@ -56,8 +87,12 @@ public class CallRedirectDisa extends BroadcastReceiver {
             this.status = jo.getString("status");
             this.verbose = jo.getString("verbose");
             this.exitCode = jo.getInt("exitcode");
+            this.fallbackDisa = jo.getString("fallback_disanumber");
         } catch (Exception e) {
             Log.e("EXCEPTION", e.toString());
+            String msg = "EXCEPTION!";
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+            this.setResultData(null);
         }
 
         if (this.exitCode == 0) {
@@ -66,12 +101,15 @@ public class CallRedirectDisa extends BroadcastReceiver {
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putString("DisaNum", this.disaNumber);
-            editor.putString("LastDialed", originalNumber);
+            editor.putString("LastDialed", originalRawNumber);
+            editor.putString("FallbackDisa", this.fallbackDisa);
             editor.apply();
         } else {
             String msg = "FAILURE! " + this.verbose;
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
-            this.setResultData("");
+            String newdialstring = this.fallbackDisa + "," + PushPassword + "#," + originalNumber;
+            Log.d("fastdisa", "dialing: " + newdialstring);
+            this.setResultData(newdialstring);
         }
     }
 }

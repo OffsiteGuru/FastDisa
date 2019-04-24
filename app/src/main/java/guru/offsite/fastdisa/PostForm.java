@@ -30,7 +30,7 @@ public final class PostForm {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
             ResponseBody responseBody = response.body();
             String output = responseBody.string();
-            Log.d("reponse string", output);
+            Log.d("response string: ", output);
             return(output);
         }
     }
