@@ -1,16 +1,18 @@
 package guru.offsite.fastdisa;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import org.json.JSONObject;
+import java.text.DateFormat;
+import java.util.Date;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,6 +25,15 @@ public class MainActivity extends AppCompatActivity {
         EditText string_url = (EditText) findViewById(R.id.txt_url);
         EditText string_password = (EditText) findViewById(R.id.txt_password);
         ToggleButton toggle_disa = (ToggleButton) findViewById(R.id.toggle_enableDISA);
+        TextView textAppInfo = (TextView) findViewById(R.id.txtAppInfo);
+
+        int versionCode = BuildConfig.VERSION_CODE;
+        String versionName = BuildConfig.VERSION_NAME;
+        Date buildDate = new Date(BuildConfig.BUILDTIMESTAMP);
+        String buildDateLocal = android.text.format.DateFormat.format("yyyy-MM-dd hh:mm:ss a", buildDate).toString();
+
+        String appInfo = "Version: " + versionName + " (build:" + versionCode + ")\r\n" + buildDateLocal;
+        textAppInfo.setText(appInfo);
 
         SharedPreferences sharedPref = context.getSharedPreferences("guru.offsite.fastdisa", Context.MODE_PRIVATE);
         string_url.setText(sharedPref.getString("PushURL", "https://"));
