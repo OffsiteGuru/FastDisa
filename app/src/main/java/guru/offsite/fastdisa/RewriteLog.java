@@ -35,12 +35,22 @@ public class RewriteLog extends BroadcastReceiver {
         // Also, we check against the previous state change, since we tend to get duplicates.
         Bundle bundle = intent.getExtras();
         String state = bundle.getString("state");
-        if (state.equals("IDLE") && !state.equals(mLastState)) {
+        if ( state.equals("IDLE") && !state.equals(mLastState) ) {
             mLastState = state;
             Log.d("FastDisa", "Phone is Idle");
 
-            // We need to know the actual number dialed so we can fix the log
+            // Do we have a last number dialed stored? If so, pull it into a local string and
+            // remove it from the preferences. We use this later to fix the log.
             final String realNumberDialed = sharedPref.getString("LastDialed", "");
+            Log.d("FastDisa", "realNumberDialed: " + realNumberDialed);
+            if ( !realNumberDialed.isEmpty() ) {
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString("LastDialed", "");
+                editor.apply();
+            } else {
+                Log.d("FastDisa", "Doesn't look like we just ended a FastDisa call");
+                return;
+            }
 
             // We change the last dialed number
             Handler handler = new Handler();
