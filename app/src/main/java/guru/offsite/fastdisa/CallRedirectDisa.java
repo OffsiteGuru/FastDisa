@@ -97,7 +97,7 @@ public class CallRedirectDisa extends BroadcastReceiver {
 
         if (this.exitCode == 0) {
             this.setResultData(this.disaNumber);
-            String msg = "Intercepted outgoing call. Old number " + originalNumber + ", new number " + this.getResultData();
+            String msg = "Fast Routing Outgoing Call";
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putString("DisaNum", this.disaNumber);
@@ -105,7 +105,7 @@ public class CallRedirectDisa extends BroadcastReceiver {
             editor.putString("FallbackDisa", this.fallbackDisa);
             editor.apply();
         } else {
-            String msg = "FAILURE! " + this.verbose;
+            String msg = "Slow Routing Outgoing Call";
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
             String newdialstring = this.fallbackDisa + "," + PushPassword + "#," + originalNumber;
             Log.d("fastdisa", "dialing: " + newdialstring);
