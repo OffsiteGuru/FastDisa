@@ -6,8 +6,8 @@ android {
         applicationId "guru.offsite.fastdisa"
         minSdkVersion 23
         targetSdkVersion 28
-        versionCode 5
-        versionName "1.05"
+        versionCode 6
+        versionName "1.06"
         buildConfigField "long", "BUILDTIMESTAMP", System.currentTimeMillis() + "L"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
