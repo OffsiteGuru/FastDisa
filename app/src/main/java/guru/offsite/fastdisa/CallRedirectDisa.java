@@ -28,7 +28,6 @@ public class CallRedirectDisa extends BroadcastReceiver {
 
         // We're going to need this thoughout
         TelephonyManager mTelephonyMgr = (TelephonyManager)context.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
-        TelecomManager mTelecomMgr = (TelecomManager)context.getSystemService(Context.TELECOM_SERVICE);
 
         // Pull the originally dialed phone number into a string variable
         String originalRawNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
@@ -107,7 +106,7 @@ public class CallRedirectDisa extends BroadcastReceiver {
         } else {
             String msg = "Slow Routing Outgoing Call";
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
-            String newdialstring = this.fallbackDisa + "," + PushPassword + "#," + originalNumber;
+            String newdialstring = this.fallbackDisa + "," + PushPassword + "#," + originalNumber + "#";
             Log.d("fastdisa", "dialing: " + newdialstring);
             this.setResultData(newdialstring);
         }
