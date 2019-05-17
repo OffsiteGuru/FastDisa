@@ -1,5 +1,7 @@
 
+
 ## FastDisa Project Brief
+Note: This is not a description of what the project *is*, but rather of what it *will be*.
 
 ### Synopsis
 FastDisa is an Android app with two primary functions:
@@ -83,6 +85,16 @@ The app will:
 3) Connect the call.
 
 ### SMS via XMPP Details
-The apps main interface when opened is a simple XMPP chat UI. At the top of the screen will be a 'plus' icon with a label "New Conversation". The middle of the screen will be a list of existing conversations.
+The apps main interface when opened is a simple XMPP chat UI. At the bottom of the screen will be a 'plus' icon with a label "New Conversation". The middle of the screen will be a list of existing conversations.
+![Main Screen Mockup](/img/mockup_mainscreen.png)
 
-Whenever a new conversation is created, the [XMPP_GATEWAY] variable is hidden from the user. A conversation is started with just a phone number. For instance, a new conversation started with 555-555-9876 would send it's messages to +15555559876@[XMPP_GATEWAY]. Notice that it also converts the outgoing number to e.164 format. The goal is to create an interface that does nothing but SMS, and has a interface familiar to users of other Android SMS apps.
+Whenever a conversation is created or displayed, the [XMPP_GATEWAY] variable is hidden from the user.
+
+A conversation is started with just a phone number. For instance, a new conversation started with 555-555-9876 would send it's messages to +15555559876@[XMPP_GATEWAY].
+
+Notice that it also converts the outgoing number to e.164 format.
+
+The goal is to create an interface that does nothing but SMS, and has a interface familiar to users of other Android SMS apps.
+
+The app registers itself with the system, so that the user can send SMS messages to their contacts from other apps.
+It also displays the conversations with the contact name and picture from the users contacts.
