@@ -26,7 +26,7 @@ public class CallRedirectDisa extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        // We're going to need this thoughout
+        // We're going to need this throughout
         TelephonyManager mTelephonyMgr = (TelephonyManager)context.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
 
         // Pull the originally dialed phone number into a string variable
