@@ -67,7 +67,7 @@ public class CallRedirectDisa extends BroadcastReceiver {
         }
 
         // Get the Caller ID and pull it into a variable
-        String mPhoneNumber = mTelephonyMgr.getLine1Number(); // TODO: We need the proper permissions for this to work. Check/Handle it.
+        String mPhoneNumber = mTelephonyMgr.getLine1Number();
         mPhoneNumber = mPhoneNumber.substring(mPhoneNumber.length() - 10);
         Log.d("fastdisa", "mynumber " + mPhoneNumber);
 

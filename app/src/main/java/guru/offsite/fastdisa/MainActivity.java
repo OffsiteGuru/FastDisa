@@ -1,9 +1,15 @@
 package guru.offsite.fastdisa;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -11,6 +17,7 @@ import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 
@@ -39,6 +46,30 @@ public class MainActivity extends AppCompatActivity {
         string_url.setText(sharedPref.getString("PushURL", "https://"));
         string_password.setText(sharedPref.getString("PushPassword", ""));
         toggle_disa.setChecked(sharedPref.getBoolean("EnableDisa", false));
+
+        ArrayList<String> permsArrayList = new ArrayList<String>();
+
+        // Check for permissions
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.PROCESS_OUTGOING_CALLS) != PackageManager.PERMISSION_GRANTED) {
+            // Permission is not granted
+            Log.d("FastDisa", "PROCESS_OUTGOING_CALLS permission missing");
+            permsArrayList.add(Manifest.permission.PROCESS_OUTGOING_CALLS);
+            //ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.PROCESS_OUTGOING_CALLS}, 1234);
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            // Permission is not granted
+            Log.d("FastDisa", "PROCESS_OUTGOING_CALLS permission missing");
+            permsArrayList.add(Manifest.permission.READ_PHONE_STATE);
+            //ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.READ_PHONE_STATE}, 4321);
+        }
+
+        // Request Permissions
+        if (!permsArrayList.isEmpty()) {
+            Log.d("FastDisa", "Requesting Permissions");
+            String[] permsArray = (String[]) permsArrayList.toArray(new String[permsArrayList.size()]);
+            ActivityCompat.requestPermissions(this, permsArray, 43278);
+        }
     }
 
     /** Called when user taps the Save button */
@@ -58,6 +89,16 @@ public class MainActivity extends AppCompatActivity {
         editor.putBoolean("EnableDisa", toggle_disa.isChecked());
 
         boolean save_return = editor.commit();
+
+        Intent backgroundService = new Intent(getApplicationContext(), FastDisaService.class);
+
+        if (sharedPref.getBoolean("EnableDisa", false)) {
+            Log.d("FastDisa", "Starting Background Service");
+            startService(backgroundService);
+        } else {
+            Log.d("FastDisa", "Stopping Background Service");
+            stopService(backgroundService);
+        }
 
         if(save_return){
             Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show();
