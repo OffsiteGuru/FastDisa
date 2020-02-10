@@ -47,21 +47,26 @@ public class MainActivity extends AppCompatActivity {
         string_password.setText(sharedPref.getString("PushPassword", ""));
         toggle_disa.setChecked(sharedPref.getBoolean("EnableDisa", false));
 
-        ArrayList<String> permsArrayList = new ArrayList<String>();
+        // An ArrayList of our required permissions. If you add them to AndroidManifest.xml, add them here too.
+        ArrayList<String> reqPermsArrayList = new ArrayList();
+        reqPermsArrayList.add(Manifest.permission.PROCESS_OUTGOING_CALLS);
+        reqPermsArrayList.add(Manifest.permission.RECEIVE_BOOT_COMPLETED);
+        reqPermsArrayList.add(Manifest.permission.READ_PHONE_STATE);
+        reqPermsArrayList.add(Manifest.permission.READ_CALL_LOG);
+        reqPermsArrayList.add(Manifest.permission.WRITE_CALL_LOG);
+        reqPermsArrayList.add(Manifest.permission.INTERNET);
+        reqPermsArrayList.add(Manifest.permission.ACCESS_NETWORK_STATE);
+        reqPermsArrayList.add(Manifest.permission.ANSWER_PHONE_CALLS);
+        reqPermsArrayList.add(Manifest.permission.FOREGROUND_SERVICE);
 
-        // Check for permissions
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.PROCESS_OUTGOING_CALLS) != PackageManager.PERMISSION_GRANTED) {
-            // Permission is not granted
-            Log.d("FastDisa", "PROCESS_OUTGOING_CALLS permission missing");
-            permsArrayList.add(Manifest.permission.PROCESS_OUTGOING_CALLS);
-            //ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.PROCESS_OUTGOING_CALLS}, 1234);
-        }
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-            // Permission is not granted
-            Log.d("FastDisa", "PROCESS_OUTGOING_CALLS permission missing");
-            permsArrayList.add(Manifest.permission.READ_PHONE_STATE);
-            //ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.READ_PHONE_STATE}, 4321);
+        // Loop throud the reqPermsArrayList, and check each one. Add the ones we don't have permission for to a new list.
+        ArrayList<String> permsArrayList = new ArrayList<>();
+        for (int i=0; i < reqPermsArrayList.size(); i++) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.PROCESS_OUTGOING_CALLS) != PackageManager.PERMISSION_GRANTED) {
+                // Permission is not granted
+                Log.d("FastDisa", "permission missing");
+                permsArrayList.add(reqPermsArrayList.get(i));
+            }
         }
 
         // Request Permissions

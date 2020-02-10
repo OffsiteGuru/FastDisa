@@ -95,7 +95,7 @@ public class CallRedirectDisa extends BroadcastReceiver {
         }
 
         if (this.exitCode == 0) {
-            this.setResultData(this.disaNumber);
+            this.setResultData(this.disaNumber); // This changes the actual outgoing number
             String msg = "Fast Routing Outgoing Call";
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
             SharedPreferences.Editor editor = sharedPref.edit();
