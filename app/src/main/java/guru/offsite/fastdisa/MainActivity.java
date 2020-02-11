@@ -95,15 +95,8 @@ public class MainActivity extends AppCompatActivity {
 
         boolean save_return = editor.commit();
 
-        Intent backgroundService = new Intent(getApplicationContext(), FastDisaService.class);
-
-        if (sharedPref.getBoolean("EnableDisa", false)) {
-            Log.d("FastDisa", "Starting Background Service");
-            startService(backgroundService);
-        } else {
-            Log.d("FastDisa", "Stopping Background Service");
-            stopService(backgroundService);
-        }
+        ServiceController svc = new ServiceController();
+        svc.autoStart(context);
 
         if(save_return){
             Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show();
