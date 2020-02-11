@@ -26,7 +26,7 @@ public class CallRedirectDisa extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        // We're going to need this thoughout
+        // We're going to need this throughout
         TelephonyManager mTelephonyMgr = (TelephonyManager)context.getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
 
         // Pull the originally dialed phone number into a string variable
@@ -67,7 +67,7 @@ public class CallRedirectDisa extends BroadcastReceiver {
         }
 
         // Get the Caller ID and pull it into a variable
-        String mPhoneNumber = mTelephonyMgr.getLine1Number(); // TODO: We need the proper permissions for this to work. Check/Handle it.
+        String mPhoneNumber = mTelephonyMgr.getLine1Number();
         mPhoneNumber = mPhoneNumber.substring(mPhoneNumber.length() - 10);
         Log.d("fastdisa", "mynumber " + mPhoneNumber);
 
@@ -95,7 +95,7 @@ public class CallRedirectDisa extends BroadcastReceiver {
         }
 
         if (this.exitCode == 0) {
-            this.setResultData(this.disaNumber);
+            this.setResultData(this.disaNumber); // This changes the actual outgoing number
             String msg = "Fast Routing Outgoing Call";
             Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
             SharedPreferences.Editor editor = sharedPref.edit();
