@@ -1,28 +1,35 @@
 package guru.offsite.fastdisa;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.IBinder;
-import android.support.annotation.Nullable;
-import android.support.v4.app.NotificationCompat;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.StrictMode;
+import android.telecom.CallRedirectionService;
+import android.telecom.PhoneAccountHandle;
+import android.telephony.PhoneNumberUtils;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.widget.Toast;
 
-public class FastDisaService extends Service {
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 
-    private CallRedirectDisa callRedirectDisa = null;
-    private NotificationManager mNM;
+import org.json.JSONObject;
 
-    private String NOTEID = "fastdisa_service";
+public class FastDisaService extends CallRedirectionService {
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
+    Context context;
+
+    String jsonString;
+    int apiVersion = 0;
+    Uri disaNumber;
+    String status;
+    String verbose;
+    int exitCode = 1;
+    Uri fallbackDisa;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -30,48 +37,112 @@ public class FastDisaService extends Service {
     }
 
     @Override
+    public void onPlaceCall(
+            @NonNull Uri originalNumber,
+            @NonNull PhoneAccountHandle initialPhoneAccount,
+            boolean allowInteractiveResponse
+    ) {
+        Log.i("FastDisaService:onPlaceCall", "Received: " + originalNumber);
+
+        // Reset the exit code
+        this.exitCode = 9;
+
+        // We'll need these
+        TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        SubscriptionManager subscriptionManager = (SubscriptionManager) getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+
+        // Get the Caller ID and pull it into a variable
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED) {
+            String msg = "Cannot read device phone number.";
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+            cancelCall();
+            return;
+        }
+        String devicePhoneNumber = subscriptionManager.getPhoneNumber(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID);
+        devicePhoneNumber = devicePhoneNumber.substring(devicePhoneNumber.length() - 10);
+        Log.d("FastDisaService:onPlaceCall", "mynumber " + devicePhoneNumber);
+
+        // Pull FastDisa preferences into variables.
+        SharedPreferences sharedPref = context.getSharedPreferences("guru.offsite.fastdisa", Context.MODE_PRIVATE);
+        String PushURL = sharedPref.getString("PushURL", "https://");
+        String PushPassword = sharedPref.getString("PushPassword", "");
+        String localFallbackDisa = sharedPref.getString("FallbackDisa", null);
+        if(localFallbackDisa!= null) {
+            this.fallbackDisa = Uri.parse(localFallbackDisa);
+        }
+
+        // Connect to server, post vars
+        PostForm postObj = new PostForm();
+        try {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+            this.jsonString = postObj.run(
+                    PushURL,
+                    devicePhoneNumber,
+                    PhoneNumberUtils.formatNumberToE164(
+                            originalNumber.toString(),
+                            telephonyManager.getNetworkCountryIso().toUpperCase()
+                    ).replace("+", ""),
+                    PushPassword
+            );
+            Log.d("FastDisaService:onPlaceCall", "JSON Returned: " + this.jsonString);
+            JSONObject jo = new JSONObject(this.jsonString);
+            this.apiVersion = jo.getInt("api_version");
+            this.disaNumber = Uri.parse("tel:" + jo.getString("disanumber"));
+            this.status = jo.getString("status");
+            this.verbose = jo.getString("verbose");
+            this.exitCode = jo.getInt("exitcode");
+            this.fallbackDisa = Uri.parse("tel:" + jo.getString("fallback_disanumber"));
+        } catch (Exception e) {
+            Log.e("FastDisaService:onPlaceCall", "EXCEPTION: " + e);
+        }
+
+        // Process Server Response. Fallback to manual dial (Slow Routing) if needed.
+        if (this.exitCode == 0) {
+            String msg = "Fast Routing Outgoing Call";
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putString("DisaNum", this.disaNumber.toString());
+            editor.putString("LastDialed", originalNumber.toString());
+            editor.putString("FallbackDisa", this.fallbackDisa.toString());
+            editor.apply();
+        } else {
+            String msg = "Slow Routing Outgoing Call";
+            Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+            this.disaNumber = Uri.parse(
+                    this.fallbackDisa.toString() +
+                            PhoneNumberUtils.PAUSE +
+                            PushPassword +
+                            Uri.encode("#") +
+                            PhoneNumberUtils.PAUSE +
+                            PhoneNumberUtils.formatNumberToE164(
+                                    originalNumber.toString(),
+                                    telephonyManager.getNetworkCountryIso().toUpperCase()
+                            ).replace("+", "") +
+                            Uri.encode("#"));
+            Log.d("FastDisaService:onPlaceCall", "dialing: " + this.disaNumber.toString());
+        }
+
+        redirectCall2Disa(this.disaNumber, initialPhoneAccount);
+    }
+
+    public void redirectCall2Disa(Uri newNumber, PhoneAccountHandle phoneAccount) {
+        Log.d("FastDisaService:redirectCall2Disa","Begin Function");
+        redirectCall(newNumber, phoneAccount, false);
+    }
+
+    @Override
     public void onCreate() {
         super.onCreate();
 
-        // Create an IntentFilter instance.
-        IntentFilter intentFilter = new IntentFilter();
-
-        // Add New Outgoing Call action.
-        intentFilter.addAction("android.intent.action.NEW_OUTGOING_CALL");
-
-        // Set broadcast receiver priority. Default is 0. Range is 1000 though -1000.
-        intentFilter.setPriority(100);
-
-        // Create a new outgoing call broadcast receiver.
-        callRedirectDisa = new CallRedirectDisa();
-
-        // Register the broadcast receiver with the intent filter object.
-        registerReceiver(callRedirectDisa, intentFilter);
-
-        this.showNotification();
-
-        Log.d("FastDisa", "Service onCreate: CallRedirectDisa is registered.");
+        // Populate Context
+        this.context = getApplicationContext();
+        Log.d("FastDisaService:onCreate", "Service Created");
     }
 
     @Override
     public void onDestroy() {
+        Log.d("FastDisaService:onDestroy", "Service Destroyed");
         super.onDestroy();
-
-        // Unregister callRedirectDisa when destroy.
-        if(callRedirectDisa!=null)
-        {
-            unregisterReceiver(callRedirectDisa);
-            Log.d("FastDisa", "Service onDestroy: CallRedirectDisa is unregistered.");
-        }
-    }
-
-    private void showNotification() {
-        mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-        mNM.createNotificationChannel(new NotificationChannel(NOTEID, "FastDisa Notifications", NotificationManager.IMPORTANCE_DEFAULT));
-        Notification notification = new NotificationCompat.Builder(this, NOTEID)
-                .setOngoing(false)
-                .setSmallIcon(R.drawable.ic_stat_name)
-                .build();
-        startForeground(101,  notification);
     }
 }

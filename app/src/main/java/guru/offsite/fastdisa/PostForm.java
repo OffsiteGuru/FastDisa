@@ -4,7 +4,6 @@ import android.util.Log;
 
 import java.io.IOException;
 
-import okhttp3.Call;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -29,7 +28,12 @@ public final class PostForm {
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
             ResponseBody responseBody = response.body();
-            String output = responseBody.string();
+            String output;
+            if (responseBody != null) {
+                output = responseBody.string();
+            } else {
+                output = "[EMPTY]";
+            }
             Log.d("response string: ", output);
             return(output);
         }
