@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">FastDisa</string>
+    <string name="mainactivity_help_text">Enter the FastDisa URL and PIN code above, then hit save. Note that you must select "FastDisa" in the default call redirection app window when asked.</string>
 </resources>
