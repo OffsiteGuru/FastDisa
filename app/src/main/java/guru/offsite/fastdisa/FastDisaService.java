@@ -42,7 +42,7 @@ public class FastDisaService extends CallRedirectionService {
             @NonNull PhoneAccountHandle initialPhoneAccount,
             boolean allowInteractiveResponse
     ) {
-        Log.i("FastDisaService:onPlaceCall", "Received: " + originalNumber);
+        Log.d("FastDisaService:onPlaceCall", "originalNumber: " + originalNumber);
 
         // Reset the exit code
         this.exitCode = 9;
@@ -71,6 +71,13 @@ public class FastDisaService extends CallRedirectionService {
             this.fallbackDisa = Uri.parse(localFallbackDisa);
         }
 
+        // Format original number
+        String numberToDial = PhoneNumberUtils.formatNumberToE164(
+                        Uri.decode(originalNumber.toString()),
+                        telephonyManager.getNetworkCountryIso().toUpperCase()
+                    );
+        Log.d("FastDisaService:onPlaceCall", "numberToDial: " + numberToDial);
+
         // Connect to server, post vars
         PostForm postObj = new PostForm();
         try {
@@ -79,10 +86,7 @@ public class FastDisaService extends CallRedirectionService {
             this.jsonString = postObj.run(
                     PushURL,
                     devicePhoneNumber,
-                    PhoneNumberUtils.formatNumberToE164(
-                            originalNumber.toString(),
-                            telephonyManager.getNetworkCountryIso().toUpperCase()
-                    ).replace("+", ""),
+                    numberToDial,
                     PushPassword
             );
             Log.d("FastDisaService:onPlaceCall", "JSON Returned: " + this.jsonString);
@@ -115,10 +119,7 @@ public class FastDisaService extends CallRedirectionService {
                             PushPassword +
                             Uri.encode("#") +
                             PhoneNumberUtils.PAUSE +
-                            PhoneNumberUtils.formatNumberToE164(
-                                    originalNumber.toString(),
-                                    telephonyManager.getNetworkCountryIso().toUpperCase()
-                            ).replace("+", "") +
+                            numberToDial +
                             Uri.encode("#"));
             Log.d("FastDisaService:onPlaceCall", "dialing: " + this.disaNumber.toString());
         }
